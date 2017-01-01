@@ -3,34 +3,43 @@ window.console=(function(origConsole){
     if(!window.console || !origConsole)
       origConsole = {};
     var isDebug=false,
-    logArray = {
-      logs: [],
-      errors: [],
-      warns: [],
-      infos: []
-    }
+    stack = [];
+    
     return {
         log: function(){
-          logArray.logs.push(arguments)
-          isDebug && origConsole.log && origConsole.log.apply(origConsole,arguments);
+          isDebug ?
+            origConsole.log && origConsole.log.apply(origConsole,arguments) :
+            stack.push({type: "log", arguments: arguments});
         },
         warn: function(){
-          logArray.warns.push(arguments)
-          isDebug && origConsole.warn && origConsole.warn.apply(origConsole,arguments);
+          isDebug ?
+            origConsole.warn && origConsole.warn.apply(origConsole,arguments) :
+            stack.push({type: "warn", arguments: arguments});
         },
         error: function(){
-          logArray.errors.push(arguments)
-          isDebug && origConsole.error && origConsole.error.apply(origConsole,arguments);
+          isDebug ?
+            origConsole.error && origConsole.error.apply(origConsole,arguments) :
+            stack.push({type: "error", arguments: arguments});
         },
         info: function(v){
-          logArray.infos.push(arguments)
-          isDebug && origConsole.info && origConsole.info.apply(origConsole,arguments);
+          isDebug ?
+            origConsole.info && origConsole.info.apply(origConsole,arguments) :
+            stack.push({type: "info", arguments: arguments});
         },
         debug: function(bool){
           isDebug = bool;
         },
-        logArray: function(){
-          return logArray;
+        stack: function(){
+          /* Logs all hidden logs and clears stack */
+          var old = stack;
+          stack = [];
+          
+          old.forEach(function(logEntry) {
+            origConsole[logEntry.type] &&
+              origConsole[logEntry.type].apply(origConsole, logEntry.arguments);
+          });
+          
+          return old;
         }
     };
 
